@@ -58,7 +58,7 @@ initSearchCubeDomain(const std::pair<Vec3, Vec3> &bound_box, Scalar dx) {
         (size_t)n_cubes_x * (size_t)n_cubes_y * (size_t)n_cubes_z,
     };
 }
-
+//???
 std::pair<Vec3, Vec3> bounding_box(std::vector<Vec3> const &particles) {
     Scalar minx, miny, minz;
     Scalar maxx, maxy, maxz;
@@ -81,12 +81,12 @@ std::pair<Vec3, Vec3> bounding_box(std::vector<Vec3> const &particles) {
 }
 
 // inplace functions
-void owner_cube_search(
+void owner_cube_search(         //??
     const std::vector<Vec3> &pos,
     const size_t first,
     const size_t last,
     const Scalar maxDistanceSqr,
-    std::vector<UnsortedNeighbour> &ret) {
+    std::vector<UnsortedNeighbour> &ret) {      //UnsortedNeighbour??
 
     for (size_t oid = first; oid < last; oid++) {
         Vec3 const &opos = pos[oid];
@@ -101,7 +101,7 @@ void owner_cube_search(
                 continue;
             }
 
-            auto point_dist = npos - opos;
+            auto point_dist = npos - opos;  //Distance between new and old position
             Vec3 sd = {point_dist[0], point_dist[1], point_dist[2]};
 
             const Scalar distanceSqr = sd * sd;
@@ -120,7 +120,7 @@ std::array<bool, 27> vector_inner_owner_cube_search(
     size_t last,
     Scalar maxDistanceSqr) {
 
-    std::array<bool, 27> mask {};
+    std::array<bool, 27> mask {};       //mask?
 
     for (size_t i = 0; i < last - first; i++) {
         mask[i] = false;
@@ -138,7 +138,7 @@ std::array<bool, 27> vector_inner_owner_cube_search(
     return mask;
 }
 
-void neighbour_cube_search(
+void neighbour_cube_search(         //? Neighborhood search ?
     const std::vector<Vec3> &pos,
     const size_t first,
     const size_t last,
@@ -167,7 +167,7 @@ void neighbour_cube_search(
     }
 }
 
-SubDivision id_to_i_j_k(const size_t id, const SubDivision sub) {
+SubDivision id_to_i_j_k(const size_t id, const SubDivision sub) {       //subdivision?
     // TODO the nz-1 limiter seems unnecessary
     const size_t nx = sub.nx;
     const size_t ny = sub.ny;
@@ -360,7 +360,7 @@ SortedNeighbours createNeighbours(
 
     size_t tot_pairs {0};
 
-#pragma omp parallel
+#pragma omp parallel        //pragma?
     {
         const Scalar maxDistanceSqr = scd.dx * scd.dx;
 
