@@ -67,21 +67,24 @@ template <class FieldType> class FieldEquationBase : public Model {
 
     NeighbourFieldAB &np_;
 
+    Scalar h_;
+
     ObjectRegistry &objReg_;
+
+    bool estimate_;
 
     // store previous results
     // std::map<int, T> prev_;
-
-    // the current iteraton
-    int iteration_;
-
-    Scalar h_;
 
     Scalar maxDt_ = std::numeric_limits<Scalar>::max();
 
     int stored_iteration_;
 
-    // decltype(boost::yap::make_terminal(Ddt<FieldType>())) ddt_terminal_;
+    int iteration_;
+
+    // indicate if strict bounds are enforced
+    bool bounded_ {false};
+    std::pair<Scalar, Scalar> bounds_;
 
   public:
     FieldEquationBase(
@@ -94,10 +97,11 @@ template <class FieldType> class FieldEquationBase : public Model {
           id_(objReg.get_object<IntField>("id")),
           time_(objReg.get_object<TimeGraph>("TimeGraph")),
           np_(objReg.get_object<NeighbourFieldAB>("neighbour_pairs")),
-          h_(objReg.get_object<Generic<Scalar>>("h")()), objReg_(objReg) {}
+          h_(objReg.get_object<Generic<Scalar>>("h")()), objReg_(objReg),
+          estimate_(false) {}
 
     void store_old_value() {
-        for(size_t i=0; i<fo_.size(); i++) {
+        for (size_t i = 0; i < fo_.size(); i++) {
             fo_[i] = f_[i];
         }
     }
@@ -107,9 +111,10 @@ template <class FieldType> class FieldEquationBase : public Model {
     Ddt<FieldType> ddt() { return Ddt(time_.get_deltaT(), fo_, this->id_); }
 
     template <class Expr> void solve(Expr e) {
-        this->log().info_begin() << "Solving: " << this->f_.get_name();
+        this->log().info_begin() << "Solving for" << this->f_.get_name();
         decltype(auto) expr = boost::yap::as_expr(e);
         solve_impl(f_, id_, expr);
+        clamp_in_range();
         this->log().info_end();
     }
 
@@ -120,20 +125,33 @@ template <class FieldType> class FieldEquationBase : public Model {
     // use always previous timestep value
     // for ddt
     FieldType &estimate() {
+        // dont advance in time for estimate
+        this->estimate_ = true;
         this->execute();
+        this->estimate_ = false;
         return f_;
     }
 
-    // template<class T>
-    // virtual T expression();
+    // if limits are specified the equation will enforce bounds after calling
+    // solve
+    void init_limits() {
+        std::string min_name = f_.get_name() + "_min";
+        std::string max_name = f_.get_name() + "_max";
 
-    // solve();
+        if (parameter_[min_name] || parameter_[max_name]) bounded_ = true;
 
-    // get the result for the given iteration
-    //
-    // get the result for the given iteration
-    // if iteration is larger then cached iteration
-    // equation is solved
+        bounds_.first =
+            read_or_default_coeff(min_name, std::numeric_limits<Scalar>::max());
+        bounds_.second =
+            read_or_default_coeff(max_name, std::numeric_limits<Scalar>::min());
+    }
+
+    // restricts field values to be in given range
+    void clamp_in_range() {
+        if (bounded_) {
+            clamp_field_in_range(f_, bounds_.first, bounds_.second);
+        }
+    }
 };
 
 template <class FieldGradientType, template <typename> class SumABdWType>
@@ -174,7 +192,7 @@ class FieldGradientEquation : public FieldEquationBase<FieldGradientType> {
               this->f_, this->np_, dWdx_, dWdxn_)) {}
 
     template <class RHS> void solve(RHS rhs, bool reset = true) {
-        this->log().info_begin() << "Solving: " << this->f_.get_name();
+        this->log().info_begin() << "Solving for " << this->f_.get_name();
         if (reset)
             solve_impl_res(this->f_, this->id_, rhs);
         else
@@ -182,6 +200,7 @@ class FieldGradientEquation : public FieldEquationBase<FieldGradientType> {
 
         sum_AB_dW_s.a = 0;
         sum_AB_dW_s.ab = 0;
+        this->clamp_in_range();
         this->log().info_end();
     }
 };
@@ -232,14 +251,14 @@ class FieldValueEquation : public FieldEquationBase<FieldType> {
     }
 
     template <class RHS> void solve(RHS rhs, bool reset = true) {
-        this->log().info_begin() << "Solving: "
-                                 << " for " << this->f_.get_name();
+        this->log().info_begin() << "Solving for " << this->f_.get_name();
         if (reset)
             solve_impl_res(this->f_, this->id_, rhs);
         else
             solve_impl(this->f_, this->id_, rhs);
         sum_AB_dW_s.a = 0;
         sum_AB_dW_s.ab = 0;
+        this->clamp_in_range();
         this->log().info_end();
     }
 };

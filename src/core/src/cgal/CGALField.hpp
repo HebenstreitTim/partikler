@@ -17,44 +17,15 @@
     contact: go@hpsim.de
 */
 
-#ifndef STLPOSINTEGRATOR_H
-#define STLPOSINTEGRATOR_H
+#ifndef PARTIKLER_CGALFIELD_INCLUDED
+#define PARTIKLER_CGALFIELD_INCLUDED
 
-#include <string> // for string
-#include <vector> // for vector
+#include "CGALTYPEDEFS.hpp"
+#include "Field.hpp"
 
-#include "Equation.hpp"
-#include "Field.hpp" // for Field (ptr only), IntField, PointField
-#include "FieldOps.hpp"
-#include "Models.hpp"            // for Model, ModelRegister (ptr only)
-#include "yaml-cpp/yaml.h"
+using PointField = Field<std::vector<Point>>;
 
-class ObjectRegistry;
-namespace YAML {
-class Node;
-} // namespace YAML
+PointField &operator+=(PointField &a, VectorField &b);
 
-class TimeGraph;
-
-class PosIntegrator : public VectorFieldEquation {
-
-    REGISTER_DEC_TYPE(PosIntegrator);
-
-  private:
-    // const std::vector<Point> opoints_;
-    const IntField &id_;
-
-    // Out
-    VectorField &u_;
-    TimeGraph &time_;
-
-  public:
-    PosIntegrator(
-        const std::string &model_name,
-        YAML::Node parameter,
-        ObjectRegistry &objReg);
-
-    void execute();
-};
 
 #endif

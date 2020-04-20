@@ -24,7 +24,6 @@
 #include "Field.hpp"
 #include "Models.hpp"         // for ModelRegister (ptr only), REGISTER_DEC_TYPE
 #include "ObjectRegistry.hpp" // for ObjectRegistry
-#include "cgal/CGALHelper.hpp"
 #include "yaml-cpp/yaml.h"
 
 class ParticleGeneratorBase : public Model {
@@ -32,9 +31,13 @@ class ParticleGeneratorBase : public Model {
   protected:
     FieldIdMap &fieldIdMap_;
 
+    MaterialMap &materialMap_;
+
+    Material material_;
+
     ObjectRegistry local_objReg_;
 
-    PointField &points_;
+    // PointField &points_;
 
     VectorField &pos_;
 
@@ -54,7 +57,7 @@ class ParticleGeneratorBase : public Model {
         YAML::Node parameter,
         ObjectRegistry &objReg);
 
-    Vec3 read_vector(YAML::Node parameter, std::string coeff);
+    // Vec3 read_vector(YAML::Node parameter, std::string coeff);
 
     template <class T> void append(T &, std::string name) {
         auto &oreg = get_objReg();

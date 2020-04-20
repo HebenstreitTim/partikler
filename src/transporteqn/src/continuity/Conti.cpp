@@ -22,6 +22,24 @@
 #include "Time.hpp"
 #include <math.h>
 
+ParticleMass::ParticleMass(
+    const std::string &model_name, YAML::Node parameter, ObjectRegistry &objReg)
+    : ScalarFieldEquation(
+          "Conti",
+          parameter,
+          objReg,
+          objReg.create_field<ScalarField>("mp", 0.0)) {
+
+    for (size_t i = 0; i < f_.size(); i++) {
+        // get id
+        auto &fieldIdMap(objReg.get_object<FieldIdMap>("FieldIdMap"));
+        Material m = fieldIdMap.getMaterial(this->id_[i]);
+        f_[i] = m.getMp();
+    }
+}
+
+void ParticleMass::execute() {}
+
 Conti::Conti(
     const std::string &model_name, YAML::Node parameter, ObjectRegistry &objReg)
     : ScalarFieldEquation(
@@ -30,14 +48,9 @@ Conti::Conti(
           objReg,
           objReg.create_field<ScalarField>("rho", 0.0)),
       rho_0_(read_or_default_coeff<Scalar>("rho_0", 1.0)),
-      lower_limit_(read_or_default_coeff<Scalar>("lower_limit", 0.0)),
-      mp_(objReg.get_object<Generic<Scalar>>("specific_particle_mass")()) {
+      mp_(objReg.get_object<ScalarField>("mp")) {
 
-    auto& idx = objReg_.create_field<ScalarField>("idx", 0.0);
-    for (size_t i=0;i<idx.size();i++) {
-        idx[i] = (Scalar)i;
-    }
-
+    init_limits();
 }
 
 void Conti::execute() {
@@ -48,13 +61,6 @@ void Conti::execute() {
     auto sum_AB_o = boost::yap::make_terminal(sab);
 
     solve(mp_ * sum_AB_o(W_));
-
-    // TODO do it lazily
-    for (auto &el : f_) {
-        if (el < lower_limit_) {
-            el = lower_limit_;
-        }
-    }
 
     // set iteration
     iteration_ = time_.get_current_timestep();
@@ -71,8 +77,18 @@ TransientConti::TransientConti(
           objReg.create_field<ScalarField>(
               "rho",
               read_or_default_coeff_impl<Scalar>(parameter, "rho_0", 1.0))),
-      u_(objReg.velocity()),
-      mp_(objReg.get_object<Generic<Scalar>>("specific_particle_mass")()) {}
+      u_(objReg.velocity()), mp_(objReg.get_object<ScalarField>("mp")) {
+
+    // init field from material properties
+    for (size_t i = 0; i < f_.size(); i++) {
+        // get id
+        auto &fieldIdMap(objReg.get_object<FieldIdMap>("FieldIdMap"));
+        Material m = fieldIdMap.getMaterial(this->id_[i]);
+        f_[i] = m.getRho();
+    }
+
+    init_limits();
+}
 
 void TransientConti::execute() {
 
@@ -89,5 +105,6 @@ void TransientConti::execute() {
     iteration_ = time_.get_current_timestep();
 }
 
+REGISTER_DEF_TYPE(TRANSPORTEQN, ParticleMass);
 REGISTER_DEF_TYPE(TRANSPORTEQN, Conti);
 REGISTER_DEF_TYPE(TRANSPORTEQN, TransientConti);

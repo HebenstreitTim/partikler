@@ -70,19 +70,7 @@ class TimeGraph : public Model {
 
     void execute_pre() { init_.execute(); }
 
-    void execute_main() {
-        // TODO register some kind of call back
-        while (current_timestep_ < iterations_) {
-
-            log().info_begin() << "Start Timestep " << current_timestep_;
-
-            main_.execute();
-            log().info_end() << "Timestep " << current_timestep_;
-            // TODO dont write via objReg, write via Writer SubModel
-            // get_objReg().write_to_disk(current_timestep_, name_);
-            current_timestep_++;
-        };
-    }
+    void execute_main();
 
     void set_model_timestep(std::string name, Scalar dt) {
         log().info() << "Setting timestep limit " << dt << " for Model "
@@ -104,14 +92,7 @@ class TimeGraph : public Model {
         post_.sub_model_push_back(m);
     }
 
-    Scalar get_deltaT() {
-        Scalar dt = std::numeric_limits<Scalar>::max();
-        for (auto &el : model_timestep_restrictions_) {
-            if (el.second < dt) dt = el.second;
-        }
-        set_deltaT(max(min_deltaT_, dt));
-        return deltaT_;
-    }
+    Scalar get_deltaT();
 
     float get_maxDeltaT() {
         if (iter_mode) return 1.0;
@@ -121,6 +102,12 @@ class TimeGraph : public Model {
     void set_deltaT(float deltaT) { deltaT_ = deltaT; }
 
     int &get_current_timestep() { return current_timestep_; }
+
+    void set_iteration(int iteration) { iterations_ = iterations_;}
+
+    void set_current_timestep(int current_timestep) {
+        current_timestep_ = current_timestep;
+    }
 };
 
 #endif

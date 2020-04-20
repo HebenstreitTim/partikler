@@ -34,6 +34,22 @@ namespace YAML {
 class Node;
 } // namespace YAML
 
+class ParticleMass : public ScalarFieldEquation {
+
+    REGISTER_DEC_TYPE(ParticleMass);
+
+  private:
+    // Coeffs
+
+  public:
+    ParticleMass(
+        const std::string &model_name,
+        YAML::Node parameter,
+        ObjectRegistry &objReg);
+
+    void execute();
+};
+
 class Conti : public ScalarFieldEquation {
 
     REGISTER_DEC_TYPE(Conti);
@@ -42,9 +58,7 @@ class Conti : public ScalarFieldEquation {
     // Coeffs
     const Scalar rho_0_;
 
-    const Scalar lower_limit_;
-
-    Scalar mp_;
+    ScalarField &mp_;
 
   public:
     Conti(
@@ -64,7 +78,7 @@ class TransientConti : public ScalarFieldEquation {
 
     VectorField &u_;
 
-    Scalar mp_;
+    ScalarField &mp_;
 
   public:
     TransientConti(

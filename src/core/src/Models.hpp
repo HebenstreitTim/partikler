@@ -48,7 +48,7 @@ class ObjectRegistry;
     static ModelRegister<NAME> reg
 
 #define REGISTER_DEF_TYPE(CLASS, NAME)                                         \
-    static_block { NAME::reg = ModelRegister<NAME>(#CLASS "::" #NAME); }
+    ModelRegister<NAME> NAME::reg(#CLASS "::" #NAME)
 
 template <class T>
 T read_coeff_impl(YAML::Node const &parameter, std::string coeff_name) {
@@ -66,7 +66,7 @@ T read_or_default_coeff_impl(
 // Abstract base class for Models
 class Model : public SPHObject {
 
-  private:
+  protected:
     YAML::Node parameter_; // Parameter of given model
 
     ObjectRegistry &objReg_; // Reference to main runTime

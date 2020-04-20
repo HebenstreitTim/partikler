@@ -1,3 +1,4 @@
+
 /*  Partikler - A general purpose framework for smoothed particle hydrodynamics
     simulations Copyright (C) 2019 Gregor Olenik
 
@@ -17,44 +18,11 @@
     contact: go@hpsim.de
 */
 
-#ifndef STLPOSINTEGRATOR_H
-#define STLPOSINTEGRATOR_H
+#include "CGALField.hpp"
 
-#include <string> // for string
-#include <vector> // for vector
-
-#include "Equation.hpp"
-#include "Field.hpp" // for Field (ptr only), IntField, PointField
-#include "FieldOps.hpp"
-#include "Models.hpp"            // for Model, ModelRegister (ptr only)
-#include "yaml-cpp/yaml.h"
-
-class ObjectRegistry;
-namespace YAML {
-class Node;
-} // namespace YAML
-
-class TimeGraph;
-
-class PosIntegrator : public VectorFieldEquation {
-
-    REGISTER_DEC_TYPE(PosIntegrator);
-
-  private:
-    // const std::vector<Point> opoints_;
-    const IntField &id_;
-
-    // Out
-    VectorField &u_;
-    TimeGraph &time_;
-
-  public:
-    PosIntegrator(
-        const std::string &model_name,
-        YAML::Node parameter,
-        ObjectRegistry &objReg);
-
-    void execute();
-};
-
-#endif
+PointField &operator+=(PointField &a, VectorField &b) {
+    for (size_t i = 0; i < a.size(); i++) {
+        a[i] += {b[i][0], b[i][1], b[i][2]};
+    }
+    return a;
+}

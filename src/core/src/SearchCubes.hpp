@@ -24,10 +24,6 @@
 #include <stddef.h> // for size_t
 #include <vector>   // for vector
 
-// #include "Field.hpp" // for FieldAB
-#include "cgal/CGALHelper.hpp"   // for STLSurfaceDist, Point3D
-#include "cgal/CGALTYPEDEFS.hpp" // for Point, Facet_handle
-
 #include <algorithm> // for std::sort
 
 #include "Scalar.hpp"
@@ -185,6 +181,8 @@ struct SortedParticles {
     std::vector<size_t> sorting_idxs;
     std::vector<Vec3> particles;
 };
+
+std::ostream &operator<<(std::ostream &os, NeighbourPair const &n);
 
 std::vector<size_t> upper_neighbour_cubes(
     const SubDivision sub,

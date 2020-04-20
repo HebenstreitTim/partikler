@@ -38,63 +38,64 @@
 
 #include "Scalar.hpp"
 
-// Currently under ubuntu the gcc compiler optimises
-// the register to call to the model register away
-// if it doesn't see a call anywere in the executable.
-// Hence, for no the register calls are made manually
-// until a better solution is found
-#ifdef WITH_GNU
-#include "GenerateBoundaryParticles.hpp"
+// // Currently under ubuntu the gcc compiler optimises
+// // the register to call to the model register away
+// // if it doesn't see a call anywere in the executable.
+// // Hence, for no the register calls are made manually
+// // until a better solution is found
+// #ifdef WITH_GNU
+// #include "GenerateBoundaryParticles.hpp"
 
-REGISTER_DEF_TYPE(BOUNDARY, GenerateBoundaryParticles);
-#include "Wendland2D.hpp"
+// REGISTER_DEF_TYPE(BOUNDARY, GenerateBoundaryParticles);
+// #include "Wendland2D.hpp"
 
-REGISTER_DEF_TYPE(KERNEL, STLWendland2D);
-#include "ParticleNeighbours.hpp"
-#include "STLParticleNeighbours.hpp"
+// REGISTER_DEF_TYPE(KERNEL, STLWendland2D);
+// #include "ParticleNeighbours.hpp"
+// #include "STLParticleNeighbours.hpp"
 
-REGISTER_DEF_TYPE(PARTICLENEIGHBOURS, SPHSTLParticleNeighbours);
-REGISTER_DEF_TYPE(PARTICLENEIGHBOURS, SPHParticleNeighbours);
-#include "SortParticles.hpp"
+// REGISTER_DEF_TYPE(PARTICLENEIGHBOURS, SPHSTLParticleNeighbours);
+// REGISTER_DEF_TYPE(PARTICLENEIGHBOURS, SPHParticleNeighbours);
+// #include "SortParticles.hpp"
 
-REGISTER_DEF_TYPE(SORTING, CountingSortParticles);
-#include "Conti.hpp"
+// REGISTER_DEF_TYPE(SORTING, CountingSortParticles);
+// #include "Conti.hpp"
 
-REGISTER_DEF_TYPE(TRANSPORTEQN, Conti);
-#include "Momentum.hpp"
+// REGISTER_DEF_TYPE(TRANSPORTEQN, Conti);
+// #include "Momentum.hpp"
 
-REGISTER_DEF_TYPE(TRANSPORTEQN, Momentum);
-#include "Bonet.hpp"
-#include "Solenthaler.hpp"
+// REGISTER_DEF_TYPE(TRANSPORTEQN, Momentum);
+// #include "Bonet.hpp"
+// #include "Cole.hpp"
+// #include "Solenthaler.hpp"
 
-REGISTER_DEF_TYPE(TRANSPORTEQN, Bonet);
-#include "Szewc.hpp"
+// REGISTER_DEF_TYPE(TRANSPORTEQN, Cole);
+// #include "Szewc.hpp"
 
-REGISTER_DEF_TYPE(VISCOSITY, Szewc);
-#include "CGALParticleGenerator.hpp"
+// REGISTER_DEF_TYPE(VISCOSITY, Szewc);
+// #include "CGALParticleGenerator.hpp"
 
-REGISTER_DEF_TYPE(READER, SPHSTLReader);
-REGISTER_DEF_TYPE(GENERATOR, SPHParticleGenerator);
-#include "STLPosIntegrator.hpp"
+// REGISTER_DEF_TYPE(READER, SPHSTLReader);
+// REGISTER_DEF_TYPE(GENERATOR, SPHParticleGenerator);
+// #include "STLPosIntegrator.hpp"
 
-REGISTER_DEF_TYPE(TRANSPORTEQN, STLPosIntegrator);
-#include "SuperSPHWriter.hpp"
+// REGISTER_DEF_TYPE(TRANSPORTEQN, STLPosIntegrator);
+// #include "SuperSPHWriter.hpp"
 
-REGISTER_DEF_TYPE(EXPORT, SuperSPHWriter);
+// REGISTER_DEF_TYPE(EXPORT, SuperSPHWriter);
 
-#include "HDF5Writer.hpp"
-REGISTER_DEF_TYPE(EXPORT, HDF5Writer);
-#include "CreateFields.hpp"
+// #include "HDF5Writer.hpp"
+// REGISTER_DEF_TYPE(EXPORT, HDF5Writer);
+// #include "CreateFields.hpp"
 
-REGISTER_DEF_TYPE(FIELDS, InitFields);
-#include "FixedValue.hpp"
+// REGISTER_DEF_TYPE(FIELDS, InitFields);
+// #include "FixedValue.hpp"
 
-REGISTER_DEF_TYPE(BOUNDARY, FixedValue);
+// REGISTER_DEF_TYPE(BOUNDARY, FixedValue);
 
-#include "Cubiod.hpp"
-REGISTER_DEF_TYPE(FIELDS, InitShape);
+// #include "Cubiod.hpp"
+// REGISTER_DEF_TYPE(FIELDS, InitShape);
 
-#endif
+// #endif
 
 void handler(int sig) {
     void *array[10];
@@ -154,14 +155,29 @@ int main(int argc, char *argv[]) {
 
     ObjectRegistry obj_reg {};
 
-    obj_reg.register_object<Generic<Scalar>>(std::make_unique<Generic<Scalar>>(
-        "specific_particle_mass",
-        GenericType,
-        config["PROJECT"]["mp"].as<Scalar>()));
+    // Register Materials
+
+    MaterialMap &mm = obj_reg.register_object<MaterialMap>(
+        std::make_unique<MaterialMap>("MaterialMap", GenericType));
+
+    for (auto el : config["PROJECT"]["MATERIALS"]) {
+        YAML::const_iterator it = el.begin();
+        std::string material_name = it->first.as<std::string>();
+        std::string material_type = it->second["type"].as<std::string>();
+        Scalar mp = it->second["mp"].as<Scalar>();
+        Scalar rho = it->second["rho"].as<Scalar>();
+
+        Material m {material_name, material_type, mp, rho};
+
+        mm.insert(material_name, m);
+    }
 
     TimeGraph &timeGraph = obj_reg.register_object<TimeGraph>(
         std::make_unique<TimeGraph>("TimeGraph", config["PROJECT"], obj_reg));
 
+    // Upon creation every "block" of particles gets its own id
+    // so that boundary/solid particles can be identified.
+    // Additionally every id maps to a material type.
     FieldIdMap &fieldIdMap = obj_reg.register_object<FieldIdMap>(
         std::make_unique<FieldIdMap>("FieldIdMap", GenericType));
 
@@ -181,7 +197,10 @@ int main(int argc, char *argv[]) {
 
     timeGraph.execute_pre();
 
-    std::cout << "main" << std::endl;
+    auto &idx = obj_reg.create_field<ScalarField>("idx", 0.0);
+    for (size_t i = 0; i < idx.size(); i++) {
+        idx[i] = (Scalar)i;
+    }
 
     for (auto el : config["PROJECT"]["MAIN"]) {
 

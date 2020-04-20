@@ -26,7 +26,6 @@
 #include "Field.hpp"  // for Field (ptr only), ScalarField, PointField
 #include "Models.hpp" // for ModelRegister (ptr only), REGISTER_DEC_TYPE
 #include "SearchCubes.hpp"
-#include "cgal/CGALHelper.hpp"
 #include "yaml-cpp/yaml.h"
 
 #include "Scalar.hpp"
@@ -66,7 +65,7 @@ class Gauss : public Model {
         const std::string &model_name,
         YAML::Node parameter,
         ObjectRegistry &objReg,
-        float hfact);
+        Scalar hfact);
 
     void execute();
 };

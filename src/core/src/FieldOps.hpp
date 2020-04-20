@@ -27,6 +27,7 @@
 #include <boost/yap/yap.hpp>
 
 #include "Scalar.hpp"
+#include <math.h>
 
 template <class ValType> struct Pow_Wrapper {
     Pow_Wrapper() {};
@@ -190,14 +191,11 @@ template <class Inner> struct Sum_AB_sym {
         while (ab < nb_.size() && a == nb_[ab].ownId) {
             auto nb_pair = nb_[ab];
             size_t b = nb_pair.neighId;
-            // Calculate density only for same fluid ids
-            // if (id_[b] == id_[a]) {
             auto vec_ij_expr = boost::yap::transform(
                 boost::yap::as_expr(expr), take_nth {a, b, ab});
             auto res = boost::yap::evaluate(vec_ij_expr);
             vec_[a] += res;
             vec_[b] += res;
-            // }
             ab++;
         }
         size_t aret = a;
@@ -329,7 +327,8 @@ template <class Inner> struct Ddt {
     // // Default constructor to allow decltype(make_terminal(Ddt()))
     // construction Ddt() {};
 
-    Ddt(Scalar dt, Inner &vec, IntField &id) : dt_(dt), vec_({}), id_(id) {
+    Ddt(Scalar dt, Inner &vec, IntField const &id)
+        : dt_(dt), vec_({}), id_(id) {
         // store old state
         vec_.reserve(vec.size());
         for (size_t i = 0; i < vec.size(); i++) {
@@ -356,7 +355,10 @@ template <class Inner> struct Ddt {
 
     std::vector<typename Inner::value_type> vec_;
 
-    IntField &id_;
+    IntField const &id_;
 };
+
+template <class Field, class El>
+void clamp_field_in_range(Field &f, El lo, El hi);
 
 #endif

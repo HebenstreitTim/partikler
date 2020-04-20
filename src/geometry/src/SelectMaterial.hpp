@@ -1,3 +1,4 @@
+
 /*  Partikler - A general purpose framework for smoothed particle hydrodynamics
     simulations Copyright (C) 2019 Gregor Olenik
 
@@ -17,43 +18,43 @@
     contact: go@hpsim.de
 */
 
-#ifndef Pressure_H
-#define Pressure_H
+#ifndef PARTIKLER_INITSHAPE_INCLUDED_H
+#define PARTIKLER_INITSHAPE_INCLUDED_H
 
-#include <string> // for string
-
-#include "Equation.hpp"
-#include "Field.hpp" // for ScalarField, VectorField
-#include "FieldOps.hpp"
-#include "Models.hpp" // for ScalarFieldEquation, ModelRegister (ptr only)
-#include "Scalar.hpp"
-#include "SearchCubes.hpp"
+#include "Field.hpp"
+#include "Models.hpp" // for ModelRegister (ptr only), REGISTER_DEC_TYPE
+#include "ParticleGeneratorBase.hpp"
 #include "yaml-cpp/yaml.h"
 
-#include <boost/yap/print.hpp>
-#include <boost/yap/yap.hpp>
+class SelectMaterial : public Model {
 
-#include "Conti.hpp"
-class ObjectRegistry;
-namespace YAML {
-class Node;
-} // namespace YAML
-
-class BonetGradient : public ScalarGradientEquation {
-
-    REGISTER_DEC_TYPE(BonetGradient);
+    REGISTER_DEC_TYPE(SelectMaterial);
 
   private:
-    // In
-    // Density
-    ScalarFieldEquation &conti_;
-    ScalarFieldEquation &pressure_;
 
-    // Coeffs
-    ScalarField &mp_;
+    FieldIdMap &fieldIdMap_;
+
+    MaterialMap &materialMap_;
+
+    Material material_;
+
+    std::string name_;
+
+    int fieldId_;
+
+    VectorField& pos_;
+
+    IntField &id_;
+
+    std::string shape_;
+
+    Vec3 start_;
+
+    Vec3 end_;
+
 
   public:
-    BonetGradient(
+    SelectMaterial(
         const std::string &model_name,
         YAML::Node parameter,
         ObjectRegistry &objReg);

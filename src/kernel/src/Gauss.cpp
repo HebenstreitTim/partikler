@@ -28,7 +28,7 @@ Gauss::Gauss(
     const std::string &model_name,
     YAML::Node parameter,
     ObjectRegistry &objReg,
-    float hfact)
+    Scalar hfact)
     : Model("KernelEqn", parameter, objReg),
       h_(read_or_default_coeff<Scalar>("h", 1.0)), ih_(1.0 / h_),
       alpha_(hfact / (h_ * h_)), pos_(objReg.get_pos()),
@@ -58,8 +58,6 @@ void Gauss::execute() {
         Vec3 const &opos = pos_[oid];
         Vec3 const &npos = pos_[nid];
 
-        // auto [len, lenVo, lenVn] = sd_[pid];
-
         const auto len = opos - npos;
         Scalar const maglen = std::sqrt(squared_length(len));
 
@@ -83,9 +81,7 @@ void Gauss::execute() {
                 dWdx_[pid][j] = (Scalar)len[j] / maglen * prefact;
             }
         } else {
-            for (int j = 0; j < 3; j++) {
-                dWdx_[pid] = {0.0, 0.0, 0.0};
-            }
+            dWdx_[pid] = {0.0, 0.0, 0.0};
             log().warn() << "Neighbour sum == 0";
         }
     }
